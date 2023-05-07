@@ -92,6 +92,7 @@ def download(args):
         else:
             os.chmod(filename, seagate_mode)
             os.remove(seagate_filename)
+            os.rename(seagate_file_path, seagate_file_path + ".removable")
             print(f"{filename} restored from Seagate.")
     except:
         print(f"Error: Failed to copy {filename} from Seagate.")
