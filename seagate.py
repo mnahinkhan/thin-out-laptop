@@ -8,6 +8,14 @@ import sys
 # This dir needs to exist.
 SEAGATE_DIR = "/Volumes/Files/thinning"  # change this to your Seagate directory
 
+# https://stackoverflow.com/a/43761127/8551394
+def copyComplete(source, target):
+    # copy content, stat-info (mode too), timestamps...
+    shutil.copy2(source, target)
+    # copy owner and group
+    st = os.stat(source)
+    os.chown(target, st.st_uid, st.st_gid)
+
 
 def evict(args):
     filename = args.file
@@ -30,7 +38,7 @@ def evict(args):
         if not os.path.exists(seagate_file_parent):
             os.mkdir(seagate_file_parent)
 
-        shutil.copy(filename, seagate_file_path)
+        copyComplete(filename, seagate_file_path)
 
         # Verify MD5
         if md5hash != get_file_md5(seagate_file_path):
@@ -39,7 +47,7 @@ def evict(args):
 
         # add Seagate info to the original file
         with open(seagate_filename, "w") as f:
-            f.write(f"Seagate file path: {seagate_file_path}\nMD5 hash: {md5hash}")
+            f.write(f"Seagate file path: {seagate_file_path}\nMD5 hash: {md5hash}\nMode: {os.stat(filename).st_mode}")
 
         # rename the original file to .seagate
         os.remove(filename)
@@ -64,19 +72,25 @@ def download(args):
             seagate_info = f.read().strip().split("\n")
             seagate_file_path = seagate_info[0].split(": ")[1]
             seagate_md5 = seagate_info[1].split(": ")[1]
+            try:
+                seagate_mode = int(seagate_info[2].split(": ")[1])
+            except ValueError:
+                print("Error with formatting of .seagate file")
+                sys.exit(1)
 
         if os.path.exists(filename):
             print("Error: the file to be downloaded seems to already exist!")
             sys.exit(1)
 
         # copy the file from Seagate
-        shutil.copy(seagate_file_path, filename)
+        copyComplete(seagate_file_path, filename)
 
         # verify the file's MD5 hash
         if get_file_md5(filename) != seagate_md5:
             print(f"Warning: {filename} does not match its Seagate version.")
             sys.exit(1)
         else:
+            os.chmod(filename, seagate_mode)
             os.remove(seagate_filename)
             print(f"{filename} restored from Seagate.")
     except:
