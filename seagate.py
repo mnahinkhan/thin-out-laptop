@@ -49,14 +49,16 @@ def evict(args):
         with open(seagate_filename, "w") as f:
             f.write(f"Seagate file path: {seagate_file_path}\nMD5 hash: {md5hash}\nMode: {os.stat(filename).st_mode}")
 
-        # rename the original file to .seagate
-        os.remove(filename)
-
-        print(f"{filename} evicted to Seagate.")
     except Exception as e:
         print(f"Error: Failed to copy {filename} to Seagate.")
         print(e)
+        os.remove(seagate_file_path)  # since something went wrong
         sys.exit(1)
+
+    # Everything went right.
+    os.remove(filename)
+    print(f"{filename} evicted to Seagate.")
+
 
 def download(args):
     filename = args.file
@@ -91,12 +93,15 @@ def download(args):
             sys.exit(1)
         else:
             os.chmod(filename, seagate_mode)
-            os.remove(seagate_filename)
-            os.rename(seagate_file_path, seagate_file_path + ".removable")
-            print(f"{filename} restored from Seagate.")
     except:
         print(f"Error: Failed to copy {filename} from Seagate.")
+        os.remove(filename)  # since something went wrong
         sys.exit(1)
+
+    # everything went right
+    os.remove(seagate_filename)
+    os.rename(seagate_file_path, seagate_file_path + ".removable")
+    print(f"{filename} restored from Seagate.")
 
 def get_file_md5(filename):
     with open(filename, "rb") as f:
