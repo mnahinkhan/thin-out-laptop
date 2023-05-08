@@ -9,9 +9,9 @@ import sys
 SEAGATE_DIR = "/Volumes/Files/thinning"  # change this to your Seagate directory
 
 # https://stackoverflow.com/a/43761127/8551394
-def copyComplete(source, target):
-    # copy content, stat-info (mode too), timestamps...
-    shutil.copy2(source, target)
+def copystat(source, target):
+    """copy stats (only) from source to target"""
+    shutil.copystat(source, target)
     # copy owner and group
     st = os.stat(source)
     os.chown(target, st.st_uid, st.st_gid)
@@ -38,7 +38,7 @@ def evict(args):
         if not os.path.exists(seagate_file_parent):
             os.mkdir(seagate_file_parent)
 
-        copyComplete(filename, seagate_file_path)
+        shutil.copyfile(filename, seagate_file_path)
 
         # Verify MD5
         if md5hash != get_file_md5(seagate_file_path):
@@ -47,7 +47,9 @@ def evict(args):
 
         # add Seagate info to the original file
         with open(seagate_filename, "w") as f:
-            f.write(f"Seagate file path: {seagate_file_path}\nMD5 hash: {md5hash}\nMode: {os.stat(filename).st_mode}")
+            f.write(f"Seagate file path: {seagate_file_path}\nMD5 hash: {md5hash}")
+
+        copystat(filename, seagate_filename)
 
     except Exception as e:
         print(f"Error: Failed to copy {filename} to Seagate.")
@@ -74,25 +76,21 @@ def download(args):
             seagate_info = f.read().strip().split("\n")
             seagate_file_path = seagate_info[0].split(": ")[1]
             seagate_md5 = seagate_info[1].split(": ")[1]
-            try:
-                seagate_mode = int(seagate_info[2].split(": ")[1])
-            except ValueError:
-                print("Error with formatting of .seagate file")
-                sys.exit(1)
 
         if os.path.exists(filename):
             print("Error: the file to be downloaded seems to already exist!")
             sys.exit(1)
 
         # copy the file from Seagate
-        copyComplete(seagate_file_path, filename)
+        shutil.copyfile(seagate_file_path, filename)
 
         # verify the file's MD5 hash
         if get_file_md5(filename) != seagate_md5:
             print(f"Warning: {filename} does not match its Seagate version.")
             sys.exit(1)
-        else:
-            os.chmod(filename, seagate_mode)
+
+        copystat(seagate_filename, filename)
+
     except:
         print(f"Error: Failed to copy {filename} from Seagate.")
         os.remove(filename)  # since something went wrong
