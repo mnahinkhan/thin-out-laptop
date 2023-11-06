@@ -170,7 +170,15 @@ def download(args):
 
     # everything went right
     os.remove(seagate_filename)
-    os.rename(seagate_file_path, seagate_file_path + ".removable")
+    # Try the below operation five times before throwing exception, since it fails sometimes.
+    for _ in range(5):
+        try:
+            os.rename(seagate_file_path, seagate_file_path + ".removable")
+            break
+        except OSError:
+            # Sleep 0.1 seconds before trying again.
+            time.sleep(0.1)
+
     print(f"{filename} restored from Seagate.")
 
 
