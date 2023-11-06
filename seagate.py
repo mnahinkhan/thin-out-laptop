@@ -8,6 +8,8 @@ import sys
 import time
 from pathlib import Path
 
+from copy_with_bars import copy_with_progress
+
 # This dir needs to exist.
 SEAGATE_DIR = "/Volumes/files/thinning"  # change this to your Seagate directory
 
@@ -68,7 +70,7 @@ def evict(args):
                 sys.exit(1)
         else:
             seagate_file_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(filename, seagate_file_path)
+            copy_with_progress(filename, seagate_file_path)
 
         # Verify MD5
         if md5hash != get_file_md5(seagate_file_path):
@@ -154,7 +156,7 @@ def download(args):
         assert seagate_file_path.startswith(SEAGATE_DIR)
 
         # copy the file from Seagate
-        shutil.copyfile(seagate_file_path, filename)
+        copy_with_progress(seagate_file_path, filename)
 
         # verify the file's MD5 hash
         if get_file_md5(filename) != seagate_md5:
