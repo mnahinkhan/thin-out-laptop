@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 
 # Backup test-zone-current/test_data.txt.seagate in case something goes wrong
 if [ -f test-zone-current/test_data.txt.seagate ]; then
