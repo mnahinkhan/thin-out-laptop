@@ -5,8 +5,7 @@ import os
 import pathlib
 import shutil
 import sys
-
-import pathlib
+import time
 from pathlib import Path
 
 # This dir needs to exist.
@@ -133,7 +132,27 @@ def download(args):
                 "/Volumes/Files/thinning", SEAGATE_DIR
             )
 
+        assert seagate_file_path.startswith(SEAGATE_DIR)
         print(seagate_file_path)
+
+        # check if the file exists on Seagate
+        if not os.path.exists(seagate_file_path):
+            # Try to replace the hash digest so that there is a path separator after the first two characters and after the next two characters.
+            # This is because the old version of this script did not include the path separators.
+            seagate_file_path = seagate_file_path[len(SEAGATE_DIR) + 1 :]
+            seagate_file_path = (
+                seagate_file_path[:2]
+                + "/"
+                + seagate_file_path[2:4]
+                + "/"
+                + seagate_file_path[4:]
+            )
+
+            seagate_file_path = os.path.join(SEAGATE_DIR, seagate_file_path)
+            print(seagate_file_path)
+
+        assert seagate_file_path.startswith(SEAGATE_DIR)
+
         # copy the file from Seagate
         shutil.copyfile(seagate_file_path, filename)
 
